@@ -1,0 +1,224 @@
+---
+title: "poker_tracking_template"
+author: "Brendon Kaufman"
+date: "September 14, 2018"
+output: html_document
+---
+
+#Poker Tracking Template for use in R
+
+Poker players often keep poor track of their results. Between cognitive biases and laziness it's easy to lose sight of one's gambling outcomes. This is a document intended to facilitate tracking and visualization of poker results. I will show example code using Hadley Wickham's `library(tidyverse)`, including style conventions. The capabilities of this code include but are not limited to: easily tracking cash and tournament results, breaing kdown the results by location/stake/time, and visualizing plots of hours played and cumulative profit. 
+
+##Packages that we will need for this script
+
+We will only need `library(tidyverse)`, its date companion `library(lubridate)`, and `library(scales)` (helps with plotting dates) to run this script. 
+
+```{r package load, message=FALSE, warning = FALSE}
+library(tidyverse)
+library(lubridate)
+library(scales)
+```
+
+Note that when you do create your databases of poker results, they will be stored in CSVs and you will need to load them at the top
+of the document, before you do any analysis with them. I have put an example below, but have commented out the lines because these
+files do not yet exist.  
+
+```{r data_load, message=FALSE, warning = FALSE}
+
+cash_dir <- "data_repository\\poker_cash_tracking.csv"
+tourney_dir <- "data_repository\\poker_tourney_tracking.csv"
+#cash_stats <- read_csv(cash_dir)
+#tourney_stats <- read_csv(tourney_dir)
+```
+
+##Cash Template
+
+###Cash Database Creation
+
+Here I outline a template for tracking cash game results. First, you'll need to create a tibble (`tidyverse` version of dataframe)
+with all your desired variables. For cash games, you might want to know the following: Date, Location, Live or Online, Limit, Game, Buy-in, Cash Out, Expenses, Session Length, and any notes you might have had. You can edit these variables, but they are a nice starting point. You'll get rid of this when you've gotten started. 
+
+```{r create_cash_tibble}
+cash_stats <- tibble(date = date(), location = character(), live_or_online = character(), limit = character(), game = character(), buy_in = numeric(), cash_out = numeric(), expenses = numeric(), session_length = numeric(), notes = character() )
+```
+
+Great, now that we have an empty table, let's create some mock sessions. To add a session to `cash_stats`, we will use `add_row`. Simply add all of the relevant information as follows, rewriting `cash_stats` with the new row.
+
+```{r initial_cash_row_add}
+cash_stats <- cash_stats %>%
+  add_row(date = '2018-09-14', location = 'Bellagio', live_or_online = 'Live', limit = '500NL', game = 'NLH', buy_in = 500, cash_out = 450, expenses = 25, session_length = 5, notes = 'saw Mickey' )
+#Now let's take a look at the new tibble
+cash_stats
+```
+
+Cool, so we've added a session. Let's add a few more to allow for basic analyses. This should normally be easy since you'll only be adding one session at a time.
+
+```{r supplementary_row_add}
+cash_stats <- cash_stats %>%
+  add_row(date = '2018-09-15', location = 'Bellagio', live_or_online = 'Live', limit = '1000NL', game = 'PLO', buy_in = 1000, cash_out = 2245, expenses = 35, session_length = 7, notes = 'Mickey was fine' ) %>%
+  add_row(date = '2018-09-16', location = 'Aria', live_or_online = 'Live', limit = '500NL', game = 'NLH', buy_in = 300, cash_out = 650, expenses = 35, session_length = 5, notes = 'Mickey blew my mind' ) %>%
+  add_row(date = '2018-09-17', location = 'Bellagio', live_or_online = 'Live', limit = '500NL', game = 'PLO', buy_in = 845, cash_out = 250, expenses = 35, session_length = 2, notes = 'Hey Mickey' ) %>%
+  add_row(date = '2018-09-18', location = 'Aria', live_or_online = 'Live', limit = '1000NL', game = 'NLH', buy_in = 2500, cash_out = 2700, expenses = 35, session_length = 17, notes = 'Hey Mickey' )
+  
+#Let's look at our database of 5 cash sessions
+cash_stats
+```
+
+Sweet, so now we've got a database to do analysis on. When you're actually creating you're own, you'll want to save your database every time you add a new row. To do this, you'll save it as a csv to the directory you're working from.
+
+```{r saving_cash_database}
+write_csv(cash_stats, cash_dir)
+```
+
+So, to edit your current database: 
+
+1. Load in packages and current database
+2. Add rows using `add_row` 
+3. Overwrite your current database using `write_csv`
+
+You should now be set to write your own cash database for analysis!
+
+###Cash Statistical Analysis
+
+This section is completely separate from the previous one in that it's what you'll actually be using to analyze and visualize your data.
+
+One of the first things you might want to do is add **net_profit** and **cumulative_profit** columns. You can do this with `mutate`. You can run this anew every time you want to do analysis. It's not computationally burdensome, run this entire section when you want to do analysis.
+
+```{r basic_cash_adds}
+cash_stats <- cash_stats %>%
+  mutate(net_profit = cash_out - (expenses + buy_in),
+         cumulative_profit = cumsum(net_profit))
+```
+
+
+One of the most important things for us to know is how you do in different games, different locations, or different limits. This can be easily done with `group_by` and `summarise`. My examples will break down results by game, limit, and location, showing both the net profit and hours played for each game, limit, and location. I will also `arrange` each breakdown, ordering the new tibble by net profit in each category.
+
+####By Game
+```{r game_breakdown}
+cash_game_summary <- cash_stats %>% 
+  group_by(game) %>%
+  summarise(game_profit = sum(net_profit), game_hours = sum(session_length)) %>%
+  arrange(desc(game_profit))
+
+cash_game_summary
+```
+
+####By Limit
+```{r limit_breakdown}
+cash_limit_summary <- cash_stats %>% 
+  group_by(limit) %>%
+  summarise(limit_profit = sum(net_profit), game_hours = sum(session_length)) %>%
+  arrange(desc(limit_profit))
+
+cash_limit_summary
+```
+
+####By Location
+```{r location_breakdown}
+cash_location_summary <- cash_stats %>% 
+  group_by(location) %>%
+  summarise(location_profit = sum(net_profit), game_hours = sum(session_length)) %>%
+  arrange(desc(location_profit))
+
+cash_location_summary
+```
+
+This information is absolutely crucial in figuring out where you make the most money as a poker player. Breakdowns are not only limited to these metrics and you can create your own with `group_by` and `summarise`. You can use these breakdowns in plots as well to visualize the information. I will be showing how to do that. 
+
+A few more interesting analyses you might do include:
+1. Showing your biggest wins/losses
+2. Showing your activity in the past week/month
+
+Both of these are pretty simple.
+
+To show your biggest wins/losses, you'll be using `filter` and `arrange`. You'll need to pick a win/loss threshold that you consider to be big. For our purposes, we'll use 500 and -500. 
+
+####Big Wins
+```{r biggest_wins}
+cash_big_wins <- cash_stats %>% 
+  filter(net_profit >= 500) %>%
+  arrange(desc(net_profit))
+cash_big_wins
+```
+
+####Big Losses
+
+```{r biggest_losses}
+cash_big_losses <- cash_stats %>% 
+  filter(net_profit <= -500) %>%
+  arrange(desc(net_profit))
+cash_big_losses
+```
+
+To show your activity in the past week/month you will be using `filter` and functions from `lubridate` including `today()`, `days()` and `months()`.
+
+####Last Week
+```{r last_week}
+last_week <- cash_stats %>%
+  filter(date >= today() - days(7))
+
+last_week
+```
+
+
+####Last Month
+```{r last_month}
+
+last_month <- cash_stats %>%
+  filter(date >= today() - months(1))
+
+last_month
+```
+
+There's just a small sample of the metrics you might be interested in when analyzing your cash progress. Now, we'll move on to visualizing your results using `ggplot2`.
+
+###Cash Visualization
+
+One of the most important things to do as a poker player is to zoom out and look at your entire progress throughout your career.
+As the saying goes, "life is one long session." It is too easy to get wrapped up in recent results and think that something is very off. We can literally zoom out by looking at a plot of your cumulative profit, created using `ggplot2`.
+
+
+```{r cash_cumulative_plot}
+
+cash_cumulative_plot <- ggplot(cash_stats, aes(date, cumulative_profit, group = 1))
+
+cash_cumulative_viz <- cash_cumulative_plot + 
+  geom_line(color = "blue", size = 1.25) +
+  labs(x = "Date", y = "Cash Profit ($)", title = "Cumulative Cash Profit") +
+  theme_classic() + 
+  theme(plot.title = element_text(hjust = 0.5)) + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+cash_cumulative_viz
+
+
+```
+
+
+Another plot you might be interested in is a visualization of your performance across different games. This might be best done as a bar_plot using our previously created `cash_game_summary` tibble. 
+
+```{r cash_game_plot}
+
+cash_game_plot <- ggplot(cash_game_summary, aes(game, game_profit))
+
+cash_game_viz <- cash_game_plot + geom_bar(stat = "identity", fill = "blue") + 
+  labs(x = "Game", y = "Net Profit ($)", title = "Net Profit per Game") +
+  theme_classic() + 
+  theme(plot.title = element_text(hjust = 0.5))
+
+
+cash_game_viz
+
+
+```
+
+Of course, you can do this same bar plot with any other breakdown that you may have created above. 
+
+This is the end of the template for now, but I'll be adding in code for tournament analysis/visualization as well. 
+
+
+
+
+
+
+
