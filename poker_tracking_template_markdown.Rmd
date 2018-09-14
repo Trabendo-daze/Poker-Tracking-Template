@@ -7,7 +7,7 @@ output: html_document
 
 #Poker Tracking Template for use in R
 
-Poker players often keep poor track of their results. Between cognitive biases and laziness it's easy to lose sight of one's gambling outcomes. This is a document intended to facilitate tracking and visualization of poker results. I will show example code using Hadley Wickham's `library(tidyverse)`, including style conventions. The capabilities of this code include but are not limited to: easily tracking cash and tournament results, breaing kdown the results by location/stake/time, and visualizing plots of hours played and cumulative profit. 
+Poker players often keep poor track of their results. Between cognitive biases and laziness it's easy to lose sight of one's gambling outcomes. This is a document intended to facilitate tracking and visualization of poker results. I will show example code using Hadley Wickham's `library(tidyverse)`, including style conventions. The capabilities of this code include but are not limited to: easily tracking cash and tournament results, breaking down the results by location/stake/time, and visualizing plots of hours played and cumulative profit. 
 
 ##Packages that we will need for this script
 
@@ -195,7 +195,7 @@ cash_cumulative_viz
 ```
 
 
-Another plot you might be interested in is a visualization of your performance across different games. This might be best done as a bar_plot using our previously created `cash_game_summary` tibble. 
+Another plot you might be interested in is a visualization of your performance across different games. This might be best done as a bar plot using our previously created `cash_game_summary` tibble. 
 
 ```{r cash_game_plot}
 
